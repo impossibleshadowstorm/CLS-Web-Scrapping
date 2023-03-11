@@ -233,14 +233,17 @@ class ProductScraper:
 
 
 if __name__ == "__main__":
-    product_pages = get_products()
-    for product_page in product_pages:
-        scrapper = ProductScraper(product_page)
-        all_varients = scrapper.get_all_varients()
-        for varient in all_varients:
-            try:
-                product_scrapper = ProductScraper(varient)
-                product_scrapper.scrape()
-            except Exception as e:
-                logging.error("Error while scraping product: try manually {e}", exc_info=True)
-                print("Could not find data for - ", varient)
+    # product_pages = get_products()
+    # for product_page in product_pages:
+        # scrapper = ProductScraper(product_page)
+        # all_varients = scrapper.get_all_varients()
+        # for varient in all_varients:
+        #     try:
+        #         product_scrapper = ProductScraper(varient)
+        #         product_scrapper.scrape()
+        #     except Exception as e:
+        #         logging.error("Error while scraping product: try manually {e}", exc_info=True)
+        #         print("Could not find data for - ", varient)
+
+
+    
