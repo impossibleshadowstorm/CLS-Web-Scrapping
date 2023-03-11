@@ -5,6 +5,19 @@ from openpyxl import load_workbook
 from datetime import datetime
 from src.helpers import get_products, ImageResizer
 from playwright.sync_api import sync_playwright
+import logging
+
+"""
+Logger with the below function will create a log file in the current directory
+
+logging.debug('This is a debug message')
+logging.info('This is an info message')
+logging.warning('This is a warning message')
+logging.error('This is an error message')
+logging.critical('This is a critical message')
+"""
+logging.basicConfig(filename="application.log", level=logging.DEBUG)
+
 
 HEIGHT = 620
 WIDTH = 620
@@ -123,18 +136,21 @@ class ProductScraper:
         else:
             folder_name = current_time
 
-        dir_path = os.path.join(CWD, "data", "images", f"{now.strftime('%Y-%m-%d')}", folder_name)
+        dir_path = os.path.join(
+            CWD, "data", "images", f"{now.strftime('%Y-%m-%d')}", folder_name
+        )
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
         return dir_path
 
     def append_to_excel(self, filename, data):
+        file_path = os.path.join(CWD, "data", filename)
         wb = load_workbook(os.path.join(CWD, "data", filename))
         ws = wb.active
 
         data = [item["value"] for item in data]
         ws.append(data)
-        wb.save(filename)
+        wb.save(file_path)
 
     def save_image(self, url, folder, idx):
         """
@@ -152,7 +168,7 @@ class ProductScraper:
             with open(file_path, "wb") as file:
                 file.write(response.content)
         else:
-            print("Error: image could not be downloaded")
+            logging.error("Error: image could not be downloaded")
 
     def scrape(self):
         """
@@ -186,14 +202,13 @@ class ProductScraper:
                         if not image_src.startswith("data:image/"):
                             self.save_image(image_src, folder, idx)
                         else:
-                            print("Error: image is not available")
+                            logging.error("Error: image is not available")
                 except Exception as e:
-                    print(e)
-                    pass
+                    logging.error(f"Error: {e}")
 
             resizer = ImageResizer(HEIGHT, WIDTH)
             resizer.resize_all(folder)
-            product_data[-1]["value"] = folder
+            product_data[7]["value"] = folder
             self.append_to_excel("products.xlsx", product_data)
             browser.close()
 
@@ -223,5 +238,9 @@ if __name__ == "__main__":
         scrapper = ProductScraper(product_page)
         all_varients = scrapper.get_all_varients()
         for varient in all_varients:
-            product_scrapper = ProductScraper(varient)
-            product_scrapper.scrape()
+            try:
+                product_scrapper = ProductScraper(varient)
+                product_scrapper.scrape()
+            except Exception as e:
+                logging.error("Error while scraping product: try manually {e}", exc_info=True)
+                print("Could not find data for - ", varient)
