@@ -66,7 +66,7 @@ class Uploader:
             folder = "/Users/naveensingh/projects/CLS-Web-Scrapping/data/images/2023-03-11/miima-Black-104425/"
             files = os.listdir(folder)
             files = [f"{folder}/{i}" for i in files if i.endswith(".jpg")]
-            page.locator("input[type=file]").set_input_files(files)
+            page.locator("input[type=file] >> nth=1").set_input_files(files)
 
             with page.expect_response(
                 "https://celebratelifestyle.in/wp-admin/async-upload.php"
