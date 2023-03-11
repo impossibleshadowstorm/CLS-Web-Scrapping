@@ -3,8 +3,21 @@ import time
 import requests
 from openpyxl import load_workbook
 from datetime import datetime
-from helpers import get_products, ImageResizer
+from src.helpers import get_products, ImageResizer
 from playwright.sync_api import sync_playwright
+import logging
+
+"""
+Logger with the below function will create a log file in the current directory
+
+logging.debug('This is a debug message')
+logging.info('This is an info message')
+logging.warning('This is a warning message')
+logging.error('This is an error message')
+logging.critical('This is a critical message')
+"""
+logging.basicConfig(filename="application.log", level=logging.DEBUG)
+
 
 HEIGHT = 620
 WIDTH = 620
@@ -85,6 +98,12 @@ class ProductScraper:
                 "type": "file_path",
                 "value": "",
             },
+            {
+                "key": "product_link",
+                "name": "Product Link",
+                "type": "link",
+                "value": url,
+            },
         ]
 
     def get_product_data(self, page):
@@ -105,25 +124,33 @@ class ProductScraper:
                 item["value"] = page.query_selector(item["key"]).inner_text()
         return data
 
-    def get_or_create_folder_name(self, title):
-
+    def get_or_create_folder_name(self, title, variant):
+        now = datetime.now()
+        current_time = now.strftime("%H%M%S")
         if title is not None or title != "":
             folder_name = title.replace(" ", "_").lower()
+            if len(folder_name) > 5:
+                folder_name = f"{folder_name[:5]}-{variant}-{current_time}"
+            else:
+                folder_name = f"{folder_name}-{variant}-{current_time}"
         else:
-            folder_name = datetime.now().strftime("%Y%m%d_%H%M%S")
+            folder_name = current_time
 
-        dir_path = os.path.join(CWD, folder_name)
+        dir_path = os.path.join(
+            CWD, "data", "images", f"{now.strftime('%Y-%m-%d')}", folder_name
+        )
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
         return dir_path
 
     def append_to_excel(self, filename, data):
-        wb = load_workbook(filename)
+        file_path = os.path.join(CWD, "data", filename)
+        wb = load_workbook(os.path.join(CWD, "data", filename))
         ws = wb.active
 
         data = [item["value"] for item in data]
         ws.append(data)
-        wb.save(filename)
+        wb.save(file_path)
 
     def save_image(self, url, folder, idx):
         """
@@ -141,7 +168,7 @@ class ProductScraper:
             with open(file_path, "wb") as file:
                 file.write(response.content)
         else:
-            print("Error: image could not be downloaded")
+            logging.error("Error: image could not be downloaded")
 
     def scrape(self):
         """
@@ -152,14 +179,16 @@ class ProductScraper:
             page = browser.new_page()
             page.goto(self.url)
             time.sleep(2)
-            if(page.query_selector('#imgTagWrapperId') != None):
+            if page.query_selector("#imgTagWrapperId") != None:
                 page.click("#imgTagWrapperId")
             else:
                 page.click("#main-image-container")
             time.sleep(2)
 
             product_data = self.get_product_data(page)
-            folder = self.get_or_create_folder_name(product_data[2]["value"])
+            title = product_data[2]["value"]
+            varient = product_data[1]["value"]
+            folder = self.get_or_create_folder_name(title, varient)
 
             image_elements = page.query_selector_all("#ivThumbs >> .ivThumbImage")
             for idx, image_element in enumerate(image_elements):
@@ -173,14 +202,13 @@ class ProductScraper:
                         if not image_src.startswith("data:image/"):
                             self.save_image(image_src, folder, idx)
                         else:
-                            print("Error: image is not available")
+                            logging.error("Error: image is not available")
                 except Exception as e:
-                    print(e)
-                    pass
+                    logging.error(f"Error: {e}")
 
             resizer = ImageResizer(HEIGHT, WIDTH)
             resizer.resize_all(folder)
-            product_data[-1]["value"] = folder
+            product_data[7]["value"] = folder
             self.append_to_excel("products.xlsx", product_data)
             browser.close()
 
@@ -203,11 +231,16 @@ class ProductScraper:
             browser.close()
             return varients
 
+
 if __name__ == "__main__":
     product_pages = get_products()
     for product_page in product_pages:
         scrapper = ProductScraper(product_page)
         all_varients = scrapper.get_all_varients()
         for varient in all_varients:
-            product_scrapper = ProductScraper(varient)
-            product_scrapper.scrape()
+            try:
+                product_scrapper = ProductScraper(varient)
+                product_scrapper.scrape()
+            except Exception as e:
+                logging.error("Error while scraping product: try manually {e}", exc_info=True)
+                print("Could not find data for - ", varient)
