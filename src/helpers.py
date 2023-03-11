@@ -1,5 +1,5 @@
 import os
-from PIL import Image, ImageEnhance
+from PIL import Image
 
 
 def get_products():
@@ -9,7 +9,7 @@ def get_products():
 
 
 class ImageResizer:
-    WATERMARK_IMAGE = os.path.join(os.getcwd(), "watermark.png")
+    WATERMARK_IMAGE = os.path.join(os.getcwd(), "data", "static", "watermark.png")
     WATERMARK_TRANSPARENCY = 50
 
     def __init__(self, width, height):
@@ -30,26 +30,15 @@ class ImageResizer:
             x = image.size[0] - watermark.size[0] + 250
             y = image.size[1] - watermark.size[1] + 250
 
-
-            if watermark.mode!='RGBA':
-                alpha = Image.new('L', watermark.size, 255)
+            if watermark.mode != "RGBA":
+                alpha = Image.new("L", watermark.size, 255)
                 watermark.putalpha(alpha)
-            # else:
-            #     watermark.convert('RGBA')
-            #     alpha = Image.new('L', watermark.size, 255)
-            #     watermark.putalpha(alpha)
-            # Create an enhancer object for the image
-            # enhancer = ImageEnhance.Brightness(watermark)
-            # image_with_transparency = enhancer.enhance(self.WATERMARK_TRANSPARENCY)
 
-            # Resize the watermark
-            # image_with_transparency = watermark.resize((180, 180))
-
-            # Add the watermark to the image
-            # image.paste(image_with_transparency, (y, x))
             watermark = watermark.resize((180, 180))
 
-            paste_mask = watermark.split()[3].point(lambda i: i * self.WATERMARK_TRANSPARENCY / 100.)
+            paste_mask = watermark.split()[3].point(
+                lambda i: i * self.WATERMARK_TRANSPARENCY / 100.0
+            )
             image.paste(watermark, (x, y), mask=paste_mask)
 
             # Return the image with the watermark
@@ -74,4 +63,7 @@ class ImageResizer:
             final_image = self.add_watermark(resized_image)
 
             # Save the image
-            final_image.save(image_path)
+            try:
+                final_image.save(image_path)
+            except Exception as e:
+                final_image.convert("RGB").save(image_path)
