@@ -2,6 +2,7 @@ import os
 import time
 from playwright.sync_api import sync_playwright
 import logging
+from openpyxl import load_workbook
 
 """
 Logger with the below function will create a log file in the current directory
@@ -30,6 +31,19 @@ class Uploader:
             "short_description": "Test Description",
         }
 
+    def getData(self, filename):
+        wb = load_workbook(os.path.join(CWD, "data", filename))
+        ws = wb.active
+        self.product_data["title"] = ws.cell(row=2, column=3).value
+        self.product_data["short_description"] = ws.cell(row=2, column=7).value
+        folder = ws.cell(row=2, column=8).value
+        files = os.listdir(folder)
+        files = [f"{folder}/{i}" for i in files if i.endswith(".jpg")]
+        self.product_data["gallery_images"] = files
+        self.product_data["product_image"] = f"{os.path.join(ws.cell(row=2, column=8).value, '1.jpg')}"
+        self.product_data["regular_price"] = str(ws.cell(row=2, column=5).value).replace(",", "").replace("₹", "")
+        self.product_data["sale_price"] = ws.cell(row=2, column=4).value
+
     def upload(self):
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=False)
@@ -45,12 +59,14 @@ class Uploader:
             )
             page.locator("#title").fill(self.product_data["title"])
 
-            page.locator("#_regular_price").fill("100")
-            page.locator("#_sale_price").fill("50")
-
+            page.locator("#_regular_price").fill(self.product_data["regular_price"])
+            page.locator("#_sale_price").fill(self.product_data["sale_price"])
+            page.locator("#excerpt-html").click()
+            page.locator("#wp-excerpt-editor-container #excerpt").fill(self.product_data["short_description"])
+            # page.locator("#_sale_price").fill(self.product_data["sale_price"])
             page.locator("#set-post-thumbnail").click()
             page.locator("input[type=file]").set_input_files(
-                "/Users/naveensingh/projects/CLS-Web-Scrapping/data/images/2023-03-11/miima-Black-104425/1.jpg"
+                self.product_data["product_image"]
             )
 
             with page.expect_response(
@@ -63,18 +79,24 @@ class Uploader:
             time.sleep(5)
 
             page.locator("p >> a >> text=Add product gallery images").click()
-            folder = "/Users/naveensingh/projects/CLS-Web-Scrapping/data/images/2023-03-11/miima-Black-104425/"
+            folder = "/Users/iss/Downloads/scrapping/data/images/2023-03-12/spige-Black-200145"
             files = os.listdir(folder)
             files = [f"{folder}/{i}" for i in files if i.endswith(".jpg")]
-            page.locator("input[type=file] >> nth=1").set_input_files(files)
+            page.locator("input[type=file] >> nth=1").set_input_files(self.product_data["gallery_images"])
 
-            with page.expect_response(
-                "https://celebratelifestyle.in/wp-admin/async-upload.php"
-            ) as response_info:
-                response = response_info.value
-                print(response.status)
+            for i in range(len(files)):
+                with page.expect_response(
+                    "https://celebratelifestyle.in/wp-admin/async-upload.php"
+                ) as response_info:
+                    response = response_info.value
+                    print(response.status)
 
             page.locator("button >> text=Add to gallery").click()
+            page.locator("#in-product_cat-422").click()
+            page.locator("#in-product_cat-411").click()
+            page.locator("#in-product_cat-473").click()
+            page.locator("#save-action #save-post").click()
+            # page.locator("#publishing-action #publish").click()
 
             time.sleep(500)
 
@@ -82,4 +104,5 @@ class Uploader:
 if __name__ == "__main__":
     url = "https://celebratelifestyle.in/wp-admin/"
     scraper = Uploader(url)
+    scraper.getData("products.xlsx")
     scraper.upload()

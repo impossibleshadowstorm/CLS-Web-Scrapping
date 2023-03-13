@@ -118,10 +118,13 @@ class ProductScraper:
         """
         data = self.product_data.copy()
         for item in data:
+            print(item)
             if item["type"] == "html":
                 item["value"] = page.query_selector(item["key"]).inner_html()
+                print(item["value"])
             elif item["type"] == "text":
                 item["value"] = page.query_selector(item["key"]).inner_text()
+                print(item["value"])
         return data
 
     def get_or_create_folder_name(self, title, variant):
@@ -184,11 +187,15 @@ class ProductScraper:
             else:
                 page.click("#main-image-container")
             time.sleep(2)
+            print("klo")
 
-            product_data = self.get_product_data(page)
-            title = product_data[2]["value"]
-            varient = product_data[1]["value"]
-            folder = self.get_or_create_folder_name(title, varient)
+            # print("hello")
+            # product_data = self.get_product_data(page)
+            # print("hello2")
+            # title = product_data[2]["value"]
+            # varient = product_data[1]["value"]
+            folder = self.get_or_create_folder_name("title", "varient")
+            print("klo2")
 
             image_elements = page.query_selector_all("#ivThumbs >> .ivThumbImage")
             for idx, image_element in enumerate(image_elements):
@@ -208,8 +215,8 @@ class ProductScraper:
 
             resizer = ImageResizer(HEIGHT, WIDTH)
             resizer.resize_all(folder)
-            product_data[7]["value"] = folder
-            self.append_to_excel("products.xlsx", product_data)
+            # product_data[7]["value"] = folder
+            # self.append_to_excel("products.xlsx", product_data)
             browser.close()
 
     def get_all_varients(self):
@@ -228,7 +235,6 @@ class ProductScraper:
                 time.sleep(3)
                 varients.append(page.url)
 
-            print(varients)
             browser.close()
             return varients
 
@@ -238,10 +244,8 @@ if __name__ == "__main__":
     for product_page in product_pages:
         scrapper = ProductScraper(product_page)
         all_varients = scrapper.get_all_varients()
-        for varient in all_varients:
-            try:
-                product_scrapper = ProductScraper(varient)
-                product_scrapper.scrape()
-            except Exception as e:
-                logging.error("Error while scraping product: try manually {e}", exc_info=True)
-                print("Could not find data for - ", varient)
+        try:
+            scrapper.scrape()
+        except Exception as e:
+            logging.error("Error while scraping product: try manually {e}", exc_info=True)
+            print("Could not find data for - ", product_page)
