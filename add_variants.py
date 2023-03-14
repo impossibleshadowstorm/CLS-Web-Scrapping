@@ -82,10 +82,13 @@ class Uploader:
                 time.sleep(2)
                 page.locator("#product_attributes .attribute_taxonomy").select_option(value="-Color Variants-")
                 page.locator("#product_attributes .add_attribute").click()
-                for i in range(len(total_variants)):
-                    page.locator('[placeholder="Select terms"]').click()
-                    page.keyboard.type(self.product_data["color"])
-                    time.sleep(5)
+                page.locator('[placeholder="Select terms"]').click()
+                page.keyboard.type(self.product_data["color"])
+                time.sleep(5)
+
+                for i in range(1, len(total_variants)):
+                    page.get_by_role("li", title=all_colors[i-1])
+                    page.locator("input")
                     no_matches = page.query_selector("li >> text=No matches found")
                     if no_matches:
                         page.locator(".add_new_attribute >> text=Add new").click()
