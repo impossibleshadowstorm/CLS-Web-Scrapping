@@ -81,23 +81,59 @@ class Uploader:
                 page.locator("#woocommerce-product-data .attribute_options").click()
                 time.sleep(2)
                 page.locator("#product_attributes .attribute_taxonomy").select_option(value="-Color Variants-")
+                time.sleep(3)
                 page.locator("#product_attributes .add_attribute").click()
+                time.sleep(3)
                 page.locator('[placeholder="Select terms"]').click()
-                page.keyboard.type(self.product_data["color"])
+                page.keyboard.type(all_colors[0])
                 time.sleep(5)
+                page.keyboard.press("Enter")
 
                 for i in range(1, len(total_variants)):
-                    page.get_by_role("li", title=all_colors[i-1])
-                    page.locator("input")
+                    page.keyboard.type(all_colors[i], delay=100)
+                    # code for color selector
+                    # page.locator(f'li >> [role="option"] >> text={all_colors[i]}').click()
+                    time.sleep(5)
                     no_matches = page.query_selector("li >> text=No matches found")
                     if no_matches:
                         page.locator(".add_new_attribute >> text=Add new").click()
-                        # page.keyboard.type(self.product_data["color"])
-                        page.on("dialog", lambda dialog: dialog.accept(prompt_text=self.product_data["color"]))
+                        page.on("dialog", lambda dialog: dialog.accept(prompt_text=all_colors[i]))
                         print(self.product_data["color"])
                         time.sleep(10)
                     page.keyboard.press("Enter")
                     time.sleep(5)
+
+                page.locator("#product_attributes .save_attributes").click()
+                time.sleep(5)
+                # select variable product from product-data options
+                page.locator("#woocommerce-product-data #product-type").select_option(value="Variable product")
+                time.sleep(1)
+                page.locator("#woocommerce-product-data .attribute_options").click()
+                page.locator(".product_attributes .attribute_name").click()
+                # checkobox for enable variation
+                page.locator(".enable_variation").click()
+                #click on save attribute
+                page.locator("#product_attributes .save_attributes").click()
+                # click on variations
+                page.locator("#woocommerce-product-data .variations_options").click()
+
+                with page.expect_response(
+                        "https://celebratelifestyle.in/wp-admin/admin-ajax.php"
+                    ) as response_info:
+                        response = response_info.value
+                        print(response)
+
+                page.locator("#field_to_edit").select_option(value="Create variations from all attributes")
+                time.sleep(1)
+                page.on("dialog", lambda dialog: dialog.accept())
+
+                with page.expect_response(
+                        "https://celebratelifestyle.in/wp-admin/admin-ajax.php"
+                    ) as response_info:
+                        response = response_info.value
+                        print(response)
+                time.sleep(1)
+                page.on("dialog", lambda dialog: dialog.accept())
 
                 # page.locator("#publishing-action #publish").click()
 
