@@ -107,14 +107,17 @@ class Uploader:
                 time.sleep(5)
                 # select variable product from product-data options
                 page.locator("#woocommerce-product-data #product-type").select_option(value="Variable product")
-                time.sleep(1)
+                time.sleep(5)
                 page.locator("#woocommerce-product-data .attribute_options").click()
-                page.locator(".product_attributes .attribute_name").click()
+                time.sleep(5)
+                page.locator(".product_attributes h3").click()
+                time.sleep(10)
                 # checkobox for enable variation
-                page.locator(".enable_variation").click()
+                # page.locator(".enable_variation").click()
                 #click on save attribute
                 page.locator("#product_attributes .save_attributes").click()
                 # click on variations
+                time.sleep(3)
                 page.locator("#woocommerce-product-data .variations_options").click()
 
                 with page.expect_response(
@@ -123,17 +126,22 @@ class Uploader:
                         response = response_info.value
                         print(response)
 
+                time.sleep(3)
                 page.locator("#field_to_edit").select_option(value="Create variations from all attributes")
-                time.sleep(1)
-                page.on("dialog", lambda dialog: dialog.accept())
+                time.sleep(5)
+                page.locator(".do_variation_action").click()
+                time.sleep(10)
+                page.keyboard.press("Enter")
+                # page.on("dialog", lambda dialog: dialog.accept())
 
                 with page.expect_response(
                         "https://celebratelifestyle.in/wp-admin/admin-ajax.php"
                     ) as response_info:
                         response = response_info.value
                         print(response)
-                time.sleep(1)
-                page.on("dialog", lambda dialog: dialog.accept())
+                time.sleep(5)
+                page.keyboard.press("Enter")
+                # page.on("dialog", lambda dialog: dialog.accept())
 
                 # page.locator("#publishing-action #publish").click()
 
