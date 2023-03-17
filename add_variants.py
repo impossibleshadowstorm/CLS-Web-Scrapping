@@ -56,7 +56,7 @@ class Uploader:
             page.locator("#user_pass").fill(PASSWORD)
             page.locator("#wp-submit").click()
 
-            folder_path = "/Users/iss/Downloads/scrapping/data/images/2023-03-12"
+            folder_path = "/Users/iss/Downloads/scrapping/data/images/2023-03-17"
             total_variants = os.listdir(folder_path)
             total_variants = [i for i in total_variants if os.path.isdir(f"{folder_path}/{i}")]
             print(total_variants)

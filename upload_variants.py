@@ -55,8 +55,9 @@ class Uploader:
             page.locator("#user_pass").fill(PASSWORD)
             page.locator("#wp-submit").click()
 
-            folder_path = "/Users/iss/Downloads/scrapping/data/images/2023-03-12"
+            folder_path = "/Users/iss/Downloads/scrapping/data/images/2023-03-17"
             total_variants = os.listdir(folder_path)
+            total_variants = [i for i in total_variants if os.path.isdir(f"{folder_path}/{i}")]
 
             for i in range(len(total_variants)):
                 self.getData("products.xlsx", i+2)
@@ -85,7 +86,7 @@ class Uploader:
                 time.sleep(5)
 
                 page.locator("p >> a >> text=Add product gallery images").click()
-                folder = "/Users/iss/Downloads/scrapping/data/images/2023-03-12/spige-Black-200145"
+                folder = f"/Users/iss/Downloads/scrapping/data/images/2023-03-17/{i}"
                 files = os.listdir(folder)
                 files = [f"{folder}/{i}" for i in files if i.endswith(".jpg")]
                 page.locator("input[type=file] >> nth=1").set_input_files(self.product_data["gallery_images"])
